@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canadian Investment Tax Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F2F5;--surf:#FFF;--bord:#E2E6EA;
+  --t:#1A1F2E;--t2:#6B7280;--t3:#9CA3AF;
+  --blue:#1B4FBF;--blue-l:#EBF0FB;
+  --green:#0D8A5E;--green-l:#E6F5F0;
+  --amber:#A86B00;--amber-l:#FDF3E6;
+  --red:#C0392B;--red-l:#FDECEB;
+  --pur:#6B48B0;--pur-l:#F0ECF9;
+  --r:8px;--r-lg:12px;
+  --font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'IBM Plex Mono','SF Mono',monospace;
+  --sh:0 1px 3px rgba(0,0,0,.08)
+}
+body{font-family:var(--font);background:var(--bg);color:var(--t);font-size:13px;line-height:1.5;min-height:100vh}
+.hdr{background:var(--blue);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px}
+.hdr h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.hdr-sub{font-size:11px;opacity:.7;margin-top:2px}
+.layout{display:grid;grid-template-columns:54% 1fr;gap:14px;padding:14px 20px;max-width:1360px;margin:0 auto;align-items:start}
+.left{display:flex;flex-direction:column;gap:10px}
+.right{position:sticky;top:14px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 28px);overflow-y:auto}
+.card{background:var(--surf);border-radius:var(--r-lg);border:.5px solid var(--bord);padding:13px 15px;box-shadow:var(--sh)}
+.ct{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.fl{display:flex;align-items:center;gap:7px}
+label.lbl{font-size:11px;color:var(--t2);display:block;margin-bottom:2px}
+input[type=number],select{width:100%;padding:5px 8px;border:.5px solid var(--bord);border-radius:var(--r);background:var(--surf);color:var(--t);font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
+input[type=number]:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(27,79,191,.1)}
+input[type=range]{flex:1;accent-color:var(--blue)}
+.rval{font-family:var(--mono);font-size:12px;font-weight:500;min-width:44px;text-align:right}
+/* Account blocks */
+.acc-block{border:.5px solid var(--bord);border-radius:var(--r-lg);overflow:hidden;margin-bottom:7px}
+.acc-block:last-child{margin-bottom:0}
+.acc-head{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;background:var(--bg);border-bottom:.5px solid var(--bord)}
+.acc-info{flex:1}
+.acc-nm{font-weight:600;font-size:12px;display:flex;align-items:center;gap:7px}
+.acc-note{font-size:10px;color:var(--t2);margin-top:1px}
+.acc-body{padding:9px 11px;background:var(--surf)}
+.slots-hdr{display:grid;grid-template-columns:1fr 100px 26px;gap:6px;font-size:10px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;padding-bottom:5px;border-bottom:.5px solid var(--bord);margin-bottom:5px}
+.slot-row{display:grid;grid-template-columns:1fr 100px 26px;gap:6px;align-items:center;margin-bottom:4px}
+.sel-wrap{display:flex;align-items:center;gap:3px}
+.sel-wrap select{flex:1}
+.ibtn,.delbtn{background:none;border:.5px solid var(--bord);border-radius:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:12px;transition:all .15s;line-height:1}
+.ibtn{color:var(--t3)}
+.ibtn:hover{background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
+.delbtn{color:var(--t3)}
+.delbtn:hover{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:5px;background:none;border:.5px dashed var(--bord);border-radius:var(--r);color:var(--t2);font-size:11px;cursor:pointer;margin-top:6px;width:100%;transition:all .15s;font-family:var(--font)}
+.add-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.acc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:7px;padding-top:7px;border-top:.5px solid var(--bord);font-size:11px}
+.ua-chip{padding:2px 8px;border-radius:10px;font-family:var(--mono);font-size:10px;font-weight:500}
+.ok{background:var(--green-l);color:var(--green)}
+.warn{background:var(--amber-l);color:var(--amber)}
+.err{background:var(--red-l);color:var(--red)}
+.pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.p-b{background:var(--blue-l);color:var(--blue)}
+.p-g{background:var(--green-l);color:var(--green)}
+.p-a{background:var(--amber-l);color:var(--amber)}
+.p-p{background:var(--pur-l);color:var(--pur)}
+.p-d{background:#F0F0F0;color:#555}
+/* Metric cards */
+.mcard{background:var(--bg);border-radius:var(--r);padding:9px 10px}
+.mv{font-family:var(--mono);font-size:17px;font-weight:500;line-height:1.2}
+.ml{font-size:10px;color:var(--t2);margin-bottom:2px}
+.ms{font-size:10px;color:var(--t3);margin-top:1px}
+/* Alerts */
+.alrt{padding:7px 9px;border-radius:var(--r);font-size:11px;margin-bottom:4px;display:flex;gap:7px;align-items:flex-start;line-height:1.55}
+.alrt:last-child{margin-bottom:0}
+.aw{background:var(--amber-l);color:var(--amber)}
+.ag{background:var(--green-l);color:var(--green)}
+.ai{background:var(--blue-l);color:var(--blue)}
+/* Table */
+.ttb{width:100%;border-collapse:collapse;font-size:11px}
+.ttb th{text-align:left;padding:4px 6px;background:var(--bg);color:var(--t2);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.ttb td{padding:4px 6px;border-bottom:.5px solid var(--bord);vertical-align:top}
+.ttb tr:last-child td{border-bottom:none}
+.ttb .tot td{background:var(--bg);font-weight:600}
+/* Legend */
+.lgnd{display:flex;flex-wrap:wrap;gap:7px;font-size:10px;color:var(--t2)}
+.lgnd span{display:flex;align-items:center;gap:3px}
+.ldot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+/* Tooltip */
+#tip{position:fixed;z-index:9999;background:var(--surf);border:.5px solid var(--bord);border-radius:var(--r-lg);padding:12px 13px;box-shadow:0 4px 20px rgba(0,0,0,.14);max-width:290px;display:none;pointer-events:none;font-size:11px}
+#tip .tn{font-size:12px;font-weight:600;color:var(--t)}
+#tip .tf{font-size:11px;color:var(--t2);margin-bottom:7px;margin-top:1px}
+#tip .tr{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:.5px solid var(--bord)}
+#tip .tr:last-of-type{border-bottom:none;margin-bottom:0}
+#tip .tk{color:var(--t2)}
+#tip .tv{font-family:var(--mono);font-weight:500;text-align:right}
+#tip .geo{display:flex;height:5px;border-radius:3px;overflow:hidden;gap:1px;margin:5px 0 4px}
+#tip .tnote{font-size:10px;color:var(--t2);margin-top:7px;padding-top:7px;border-top:.5px solid var(--bord);line-height:1.55}
+#tip .ttax{font-size:10px;color:var(--pur);margin-top:5px;padding:5px 7px;background:var(--pur-l);border-radius:6px;line-height:1.5}
+/* Checkbox */
+input[type=checkbox]{accent-color:var(--blue);width:14px;height:14px;cursor:pointer;flex-shrink:0;margin-top:2px}
+/* Total input inline */
+.tot-inline{font-family:var(--mono);font-size:12px;padding:3px 7px;border:.5px solid var(--bord);border-radius:6px;width:120px;text-align:right}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.right{position:static;max-height:none}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1>Canadian Investment Tax Calculator</h1>
+    <div class="hdr-sub">RRSP · TFSA · FHSA · Non-Registered · RESP · RDSP — Multi-holding, real-time after-tax optimization</div>
+  </div>
+</div>
+
+<main class="layout">
+<div class="left">
+
+<div class="card">
+  <div class="ct">1 — Portfolio basics</div>
+  <div class="g3">
+    <div><label class="lbl">Province / territory</label>
+    <select id="s-prov" onchange="recalc()">
+      <option value="BC" selected>British Columbia</option>
+      <option value="ON">Ontario</option>
+      <option value="AB">Alberta</option>
+      <option value="QC">Quebec</option>
+      <option value="SK">Saskatchewan</option>
+      <option value="MB">Manitoba</option>
+      <option value="NS">Nova Scotia</option>
+      <option value="NB">New Brunswick</option>
+      <option value="PE">PEI</option>
+      <option value="NL">Newfoundland &amp; Labrador</option>
+    </select></div>
+    <div><label class="lbl">Annual employment income ($)</label>
+    <input type="number" id="s-inc" value="90000" step="5000" min="0" oninput="recalc()"></div>
+    <div><label class="lbl">Investment horizon (years)</label>
+    <div class="fl"><input type="range" id="s-hrz" min="1" max="40" value="20" step="1" oninput="recalc()"><span class="rval" id="v-hrz">20</span></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ct">2 — Return assumptions</div>
+  <div class="g3">
+    <div><label class="lbl">Equity gross return (%/yr)</label>
+    <input type="number" id="s-eqr" value="7.0" step="0.5" min="0" max="25" oninput="recalc()"></div>
+    <div><label class="lbl">Bond / FI gross return (%/yr)</label>
+    <input type="number" id="s-fir" value="3.5" step="0.5" min="0" max="15" oninput="recalc()"></div>
+    <div><label class="lbl">USD round-trip FX cost (%)</label>
+    <input type="number" id="s-fxc" value="0.10" step="0.05" min="0" max="3" oninput="recalc()"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ct" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span>3 — Account allocation</span>
+    <span id="grand" style="font-family:var(--mono);font-size:11px;color:var(--t2)"></span>
+  </div>
+  <div id="acc-container"></div>
+</div>
+
+</div><!-- /left -->
+
+<div class="right">
+
+<div class="card">
+  <div class="ct">Results — real-time</div>
+  <div class="g4" id="m-cards" style="margin-bottom:12px"></div>
+  <div style="position:relative;width:100%;height:195px">
+    <canvas id="chart-canvas" role="img" aria-label="Portfolio projection by account over investment horizon">Chart unavailable</canvas>
+  </div>
+  <div class="lgnd" id="lgnd" style="margin-top:6px"></div>
+</div>
+
+<div class="card">
+  <div class="ct">Tax &amp; tradeoff alerts</div>
+  <div id="alerts"><p style="font-size:11px;color:var(--t2)">Add account amounts above to see personalized alerts.</p></div>
+</div>
+
+<div class="card">
+  <div class="ct">Account breakdown</div>
+  <div style="overflow-x:auto">
+    <table class="ttb">
+      <thead><tr>
+        <th>Account</th><th>Holdings</th><th>WHT/yr</th><th>Inc. tax/yr</th><th>Net ret.</th><th>Projected</th>
+      </tr></thead>
+      <tbody id="tb-body"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /right -->
+</main>
+
+<div id="tip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ============================================================
+// DATA — Province marginal rates [income_ceiling, combined_rate]
+// ============================================================
+const PR={BC:[[45654,.2006],[55867,.2270],[73200,.3100],[100392,.3279],[111733,.3829],[133300,.4070],[165430,.4470],[235675,.4980],[1e9,.5353]],ON:[[51446,.2050],[55867,.2415],[87291,.2965],[100392,.3148],[150000,.4341],[165430,.4797],[220000,.5197],[1e9,.5397]],AB:[[55867,.2500],[100392,.3100],[131220,.3600],[157464,.3900],[165430,.3900],[235675,.4400],[1e9,.4800]],QC:[[51780,.2753],[55867,.3653],[103545,.4153],[165430,.4653],[1e9,.5365]],SK:[[49720,.2500],[100392,.3325],[1e9,.4750]],MB:[[36842,.2579],[74750,.3579],[100392,.3779],[1e9,.5040]],NS:[[29590,.2415],[59180,.3115],[93000,.3715],[150000,.4415],[1e9,.5415]],NB:[[44715,.2682],[100392,.3582],[1e9,.4782]],PE:[[32656,.2398],[64313,.3198],[1e9,.4798]],NL:[[43198,.2310],[100392,.3510],[1e9,.5110]]};
+
+// ============================================================
+// DATA — ETF / FI instruments
+// cat: 'equity' | 'fi' | 'none'
+// group: used for <optgroup> organisation
+// usl: true = US-listed (NYSE/Nasdaq) — RRSP treaty exempt
+// sw: true = swap/synthetic — no dividend distributions
+// bp: bond portion inside balanced ETF (e.g. 0.20 for VGRO)
+// us/ca/il/em: geographic weights
+// dy: estimated dividend/interest yield
+// ============================================================
+const ETFS=[
+{t:'—',cat:'none',grp:'none',mer:0,us:0,ca:0,il:0,em:0,dy:0,usl:false,bp:0,sw:false,
+  fn:'—',idx:'—',hdg:'—',ccy:'—',note:'No ETF selected.',taxnote:''},
+
+// — ALL-EQUITY, Canadian-listed ——————————————————————————————
+{t:'XEQT',cat:'equity',grp:'ae_ca',mer:.0020,us:.47,ca:.25,il:.22,em:.06,dy:.015,usl:false,bp:0,sw:false,
+  fn:'iShares Core Equity ETF Portfolio',idx:'MSCI / FTSE blend (global)',hdg:'~9,300 stocks',ccy:'CAD (TSX)',
+  note:'The most popular Canadian one-ticket all-equity fund. Holds 4 iShares sub-ETFs. 47% US, 25% Canada, 22% Intl dev., 6% EM. Auto-rebalanced quarterly. No FX conversion needed.',
+  taxnote:'WHT in RRSP: ~0.35%/yr on US portion (Canadian-domiciled, NOT treaty-exempt). Best in TFSA or taxable. In taxable, US WHT recoverable via FTC.'},
+
+{t:'VEQT',cat:'equity',grp:'ae_ca',mer:.0024,us:.44,ca:.30,il:.20,em:.06,dy:.015,usl:false,bp:0,sw:false,
+  fn:'Vanguard All-Equity ETF Portfolio',idx:'FTSE / Vanguard blend',hdg:'~13,500 stocks',ccy:'CAD (TSX)',
+  note:'Vanguard\'s all-equity one-ticket fund. Higher Canada allocation (30%) than XEQT. Holds 4 Vanguard sub-ETFs. Excellent diversification across ~13,500 names.',
+  taxnote:'Same WHT structure as XEQT. Slightly lower US weight = marginally less WHT drag in RRSP.'},
+
+{t:'ZEQT',cat:'equity',grp:'ae_ca',mer:.0018,us:.47,ca:.25,il:.22,em:.06,dy:.015,usl:false,bp:0,sw:false,
+  fn:'BMO All-Equity ETF',idx:'Multiple global indices',hdg:'~9,000+ stocks',ccy:'CAD (TSX)',
+  note:'BMO\'s one-ticket all-equity fund. Lowest MER of the big-three all-equity ETFs (0.18%). Very similar geographic allocation to XEQT.',
+  taxnote:'Same WHT rules as XEQT.'},
+
+// — BALANCED, Canadian-listed ——————————————————————————————————
+{t:'XGRO',cat:'equity',grp:'bal_ca',mer:.0020,us:.38,ca:.22,il:.16,em:.04,dy:.015,usl:false,bp:.20,sw:false,
+  fn:'iShares Core Growth ETF Portfolio (80/20)',idx:'MSCI/FTSE equity + Canadian bonds',hdg:'~9,000 stocks + bonds',ccy:'CAD (TSX)',
+  note:'80% global equity + 20% Canadian bonds in one fund. Good for investors wanting slight downside protection vs all-equity. Bond portion is sheltered from income tax inside RRSP/TFSA.',
+  taxnote:'Equity WHT same as XEQT on the 80% equity portion. Bond interest sheltered in RRSP/TFSA; taxed at marginal rate in Non-Reg.'},
+
+{t:'VGRO',cat:'equity',grp:'bal_ca',mer:.0024,us:.35,ca:.28,il:.14,em:.04,dy:.015,usl:false,bp:.20,sw:false,
+  fn:'Vanguard Growth ETF Portfolio (80/20)',idx:'FTSE equity + Canadian bonds',hdg:'~13,500 stocks + bonds',ccy:'CAD (TSX)',
+  note:'Vanguard\'s 80/20 growth ETF. Slightly more Canadian equity tilt (28%). Very similar to XGRO in risk/return.',
+  taxnote:'Same as XGRO.'},
+
+{t:'XBAL',cat:'equity',grp:'bal_ca',mer:.0020,us:.28,ca:.16,il:.12,em:.03,dy:.012,usl:false,bp:.40,sw:false,
+  fn:'iShares Core Balanced ETF Portfolio (60/40)',idx:'MSCI/FTSE equity + bonds',hdg:'Multiple holdings',ccy:'CAD (TSX)',
+  note:'Classic 60/40 balanced portfolio in a single ETF. Suitable for moderate risk. 40% bonds significantly reduces volatility.',
+  taxnote:'40% bond portion — most efficient inside RRSP/TFSA. Taxable: substantial interest income drag.'},
+
+{t:'VBAL',cat:'equity',grp:'bal_ca',mer:.0024,us:.26,ca:.18,il:.11,em:.03,dy:.012,usl:false,bp:.40,sw:false,
+  fn:'Vanguard Balanced ETF Portfolio (60/40)',idx:'FTSE equity + bonds',hdg:'Multiple holdings',ccy:'CAD (TSX)',
+  note:'Vanguard\'s 60/40 balanced ETF. Slightly more Canadian tilt than XBAL. Both are suitable for medium risk tolerance.',
+  taxnote:'Same as XBAL.'},
+
+{t:'XCNS',cat:'equity',grp:'bal_ca',mer:.0020,us:.19,ca:.10,il:.08,em:.02,dy:.010,usl:false,bp:.60,sw:false,
+  fn:'iShares Core Conservative Balanced ETF Portfolio (40/60)',idx:'MSCI/FTSE equity + bonds',hdg:'Multiple holdings',ccy:'CAD (TSX)',
+  note:'Conservative 40% equity / 60% bond allocation. Low volatility. Best for short-medium horizons or very low risk tolerance.',
+  taxnote:'60% bonds — significant income tax drag in Non-Reg. Very efficient inside RRSP/TFSA.'},
+
+{t:'VCNS',cat:'equity',grp:'bal_ca',mer:.0024,us:.17,ca:.12,il:.07,em:.02,dy:.010,usl:false,bp:.60,sw:false,
+  fn:'Vanguard Conservative ETF Portfolio (40/60)',idx:'FTSE equity + bonds',hdg:'Multiple holdings',ccy:'CAD (TSX)',
+  note:'Vanguard\'s conservative 40/60 balanced ETF. Slightly more Canadian equity allocation than XCNS.',
+  taxnote:'Same as XCNS.'},
+
+// — CANADIAN EQUITY ——————————————————————————————————————————
+{t:'VCN',cat:'equity',grp:'ca_eq',mer:.0005,us:0,ca:1,il:0,em:0,dy:.030,usl:false,bp:0,sw:false,
+  fn:'Vanguard FTSE Canada All Cap Index ETF',idx:'FTSE Canada All Cap (~230 stocks)',hdg:'~230 Canadian stocks',ccy:'CAD (TSX)',
+  note:'100% Canada. Extremely cheap (0.05% MER). Covers large, mid & small-cap Canadian stocks. Heavy in banks (30%), energy (18%), materials (11%). High dividend yield ~3%.',
+  taxnote:'Canadian dividends → eligible for dividend tax credit in Non-Reg (effective rate ~0.30× marginal). No foreign WHT. Best in TFSA or Non-Reg.'},
+
+{t:'XIC',cat:'equity',grp:'ca_eq',mer:.0006,us:0,ca:1,il:0,em:0,dy:.030,usl:false,bp:0,sw:false,
+  fn:'iShares Core S&P/TSX Capped Composite Index ETF',idx:'S&P/TSX Composite (~240 stocks)',hdg:'~240 Canadian stocks',ccy:'CAD (TSX)',
+  note:'iShares version of VCN. Tracks S&P/TSX Composite — the main Canadian benchmark. Very similar performance. Capped at 10% per stock.',
+  taxnote:'Same as VCN — Canadian dividends eligible for DTC.'},
+
+// — GLOBAL EX-CANADA ——————————————————————————————————————————
+{t:'XAW',cat:'equity',grp:'glb_ca',mer:.0022,us:.65,ca:0,il:.25,em:.10,dy:.018,usl:false,bp:0,sw:false,
+  fn:'iShares Core MSCI All Country World ex Canada Index ETF',idx:'MSCI ACWI ex Canada (~9,300 stocks)',hdg:'~9,300 stocks worldwide',ccy:'CAD (TSX)',
+  note:'Global equity ex-Canada. Commonly paired with VCN/XIC to control home bias. 65% US, 25% intl developed, 10% EM. CAD-listed, no FX needed.',
+  taxnote:'15% WHT on US portion even in RRSP (Canadian-domiciled). In taxable: FTC covers US WHT. Best in TFSA or taxable.'},
+
+{t:'VXC',cat:'equity',grp:'glb_ca',mer:.0022,us:.65,ca:0,il:.25,em:.10,dy:.018,usl:false,bp:0,sw:false,
+  fn:'Vanguard FTSE Global All Cap ex Canada Index ETF',idx:'FTSE Global All Cap ex Canada (~10,000 stocks)',hdg:'~10,000 stocks worldwide',ccy:'CAD (TSX)',
+  note:'Vanguard\'s global ex-Canada fund. Very similar to XAW. FTSE classifies South Korea as developed (vs MSCI: emerging). Slightly more holdings.',
+  taxnote:'Same WHT structure as XAW.'},
+
+// — INTERNATIONAL & EM ————————————————————————————————————————
+{t:'XEF',cat:'equity',grp:'intl_ca',mer:.0023,us:0,ca:0,il:1,em:0,dy:.025,usl:false,bp:0,sw:false,
+  fn:'iShares Core MSCI EAFE IMI Index ETF',idx:'MSCI EAFE IMI (~2,800 stocks)',hdg:'~2,800 stocks (Europe, Japan, Australia)',ccy:'CAD (TSX)',
+  note:'International developed markets ex-North America. Japan ~22%, UK ~14%, France ~11%, Germany ~9%, Australia ~7%. Higher div yield than US funds. Good diversifier.',
+  taxnote:'Foreign WHT ~12% at source (not US). In Non-Reg: claimable via FTC. No special RRSP treaty benefit.'},
+
+{t:'XEC',cat:'equity',grp:'intl_ca',mer:.0028,us:0,ca:0,il:0,em:1,dy:.025,usl:false,bp:0,sw:false,
+  fn:'iShares Core MSCI Emerging Markets IMI Index ETF',idx:'MSCI EM IMI (~2,900 stocks)',hdg:'~2,900 EM stocks',ccy:'CAD (TSX)',
+  note:'100% emerging markets. China ~30%, India ~20%, Taiwan ~15%, South Korea ~12%. Higher growth potential, higher volatility. Often held as a tilt.',
+  taxnote:'Higher foreign WHT (15-25%). Partially recoverable via FTC in taxable.'},
+
+// — US EQUITY (Canadian-listed) —————————————————————————————
+{t:'VFV',cat:'equity',grp:'us_ca',mer:.0009,us:1,ca:0,il:0,em:0,dy:.013,usl:false,bp:0,sw:false,
+  fn:'Vanguard S&P 500 Index ETF (CAD-listed)',idx:'S&P 500 (500 US large-cap stocks)',hdg:'500 largest US companies',ccy:'CAD (TSX)',
+  note:'Tracks S&P 500 in CAD. Tech-heavy (~30%: Apple, Microsoft, Nvidia, Amazon, Google). No FX conversion needed. More concentrated than VTI (no small/mid-cap).',
+  taxnote:'IMPORTANT: 15% WHT on US dividends in RRSP — NOT treaty-exempt (Canadian-domiciled fund). Switch to VTI/VOO (US-listed) in RRSP to save ~0.20%/yr.'},
+
+{t:'ZSP',cat:'equity',grp:'us_ca',mer:.0009,us:1,ca:0,il:0,em:0,dy:.013,usl:false,bp:0,sw:false,
+  fn:'BMO S&P 500 Index ETF (CAD-listed)',idx:'S&P 500 (500 US large-cap stocks)',hdg:'500 largest US companies',ccy:'CAD (TSX)',
+  note:'BMO\'s CAD-listed S&P 500 ETF. Identical index to VFV. Both are near-zero-tracking-error, well-established funds.',
+  taxnote:'Same as VFV — 15% WHT in RRSP. Not treaty-exempt.'},
+
+{t:'VUN',cat:'equity',grp:'us_ca',mer:.0016,us:1,ca:0,il:0,em:0,dy:.015,usl:false,bp:0,sw:false,
+  fn:'Vanguard US Total Market Index ETF (CAD-listed)',idx:'CRSP US Total Market (~4,000 stocks)',hdg:'~4,000 US stocks (all cap)',ccy:'CAD (TSX)',
+  note:'US total market including small & mid-cap in CAD. Broader than S&P 500. Higher MER than US-listed VTI. No FX needed.',
+  taxnote:'Same as VFV/ZSP — 15% WHT in RRSP. Prefer VTI (US-listed) in RRSP for 0% WHT.'},
+
+// — SWAP-BASED (tax-efficient, taxable accounts) ——————————————
+{t:'HXS',cat:'equity',grp:'swap',mer:.0011,us:1,ca:0,il:0,em:0,dy:0,usl:false,bp:0,sw:true,
+  fn:'Horizons S&P 500 Index ETF (swap-based)',idx:'S&P 500 total return swap',hdg:'Swap (National Bank counterparty)',ccy:'CAD (TSX)',
+  note:'Uses a total return swap — no dividend distributions. All income converted to capital gains. Zero WHT. Most tax-efficient S&P 500 in a Non-Registered account. Counterparty: National Bank of Canada.',
+  taxnote:'NON-REG: Zero annual income tax drag. Capital gains only on sale (50% inclusion). REGISTERED: No benefit vs VFV/VTI — skip swap ETFs inside RRSP/TFSA.'},
+
+{t:'HXT',cat:'equity',grp:'swap',mer:.0007,us:0,ca:1,il:0,em:0,dy:0,usl:false,bp:0,sw:true,
+  fn:'Horizons S&P/TSX 60 Index ETF (swap-based)',idx:'S&P/TSX 60 total return swap',hdg:'Swap (National Bank counterparty)',ccy:'CAD (TSX)',
+  note:'Swap-based Canadian equity ETF. Lowest MER of any Canadian equity fund (0.07%). Converts Canadian dividends to deferred capital gains. Best Canadian equity for high-income Non-Reg investors.',
+  taxnote:'NON-REG: All income deferred to sale as capital gains. REGISTERED: No benefit over VCN/XIC.'},
+
+// — US-LISTED EQUITY (USD — RRSP treaty-optimal) ——————————————
+{t:'VTI',cat:'equity',grp:'us_usd',mer:.0003,us:1,ca:0,il:0,em:0,dy:.013,usl:true,bp:0,sw:false,
+  fn:'Vanguard Total Stock Market ETF',idx:'CRSP US Total Market (~4,000 stocks)',hdg:'~4,000 US stocks (all cap)',ccy:'USD (NYSE Arca)',
+  note:'The gold standard low-cost US total market ETF. Only 0.03% MER. Requires USD account. Use Norbert\'s Gambit (DLR.TO/DLR.U.TO) or IBKR for low-cost CAD→USD conversion.',
+  taxnote:'RRSP: 0% WHT — optimal via Canada-US tax treaty. TFSA: 15% WHT (non-recoverable). Non-Reg: 15% WHT but recoverable via FTC. Note: US estate tax exposure if US-situs holdings >USD $60K.'},
+
+{t:'VOO',cat:'equity',grp:'us_usd',mer:.0003,us:1,ca:0,il:0,em:0,dy:.013,usl:true,bp:0,sw:false,
+  fn:'Vanguard S&P 500 ETF',idx:'S&P 500 (500 US large-cap stocks)',hdg:'500 largest US companies',ccy:'USD (NYSE Arca)',
+  note:'Vanguard\'s S&P 500 in USD. Same 0% WHT treaty benefit as VTI in RRSP. More concentrated (no small/mid-cap) but very low tracking error.',
+  taxnote:'Same treaty benefit as VTI. RRSP: 0% WHT. TFSA: 15% WHT. Requires USD account.'},
+
+{t:'VT',cat:'equity',grp:'us_usd',mer:.0007,us:.62,ca:.03,il:.25,em:.10,dy:.020,usl:true,bp:0,sw:false,
+  fn:'Vanguard Total World Stock ETF',idx:'FTSE Global All Cap (~9,900 stocks)',hdg:'~9,900 stocks worldwide',ccy:'USD (NYSE Arca)',
+  note:'Entire world market in one USD ETF. ~62% US, 3% Canada, 25% intl, 10% EM. In RRSP: 0% WHT on the US 62%. International/EM still has source-country WHT at fund level.',
+  taxnote:'RRSP: 0% WHT on US portion (62%). ~12% WHT on intl/EM portions at source. Still better than Canadian-listed equivalents.'},
+
+{t:'VXUS',cat:'equity',grp:'us_usd',mer:.0007,us:0,ca:.10,il:.65,em:.25,dy:.025,usl:true,bp:0,sw:false,
+  fn:'Vanguard Total International Stock ETF',idx:'FTSE Global All Cap ex-US (~8,600 stocks)',hdg:'~8,600 stocks (ex-US)',ccy:'USD (NYSE Arca)',
+  note:'Global stocks excluding US. Pairs with VTI for a two-fund portfolio. ~10% Canada, 65% intl developed, 25% EM. Requires USD. No RRSP US treaty benefit (no US stocks).',
+  taxnote:'No RRSP treaty advantage — no US-source dividends. Foreign WHT applies throughout (same as CAD-listed alternatives).'},
+
+{t:'IEFA',cat:'equity',grp:'us_usd',mer:.0007,us:0,ca:0,il:1,em:0,dy:.025,usl:true,bp:0,sw:false,
+  fn:'iShares Core MSCI EAFE IMI ETF',idx:'MSCI EAFE IMI (~2,800 stocks)',hdg:'~2,800 intl developed stocks',ccy:'USD (NYSE Arca)',
+  note:'International developed markets in USD. No RRSP treaty benefit (no US stocks). Useful for multi-currency asset location strategies or avoiding CAD-to-USD re-conversion costs.',
+  taxnote:'No RRSP advantage vs. CAD-listed XEF. Foreign WHT partially recoverable via FTC in Non-Reg.'},
+
+{t:'IEMG',cat:'equity',grp:'us_usd',mer:.0009,us:0,ca:0,il:0,em:1,dy:.025,usl:true,bp:0,sw:false,
+  fn:'iShares Core MSCI Emerging Markets IMI ETF',idx:'MSCI EM IMI (~2,800 EM stocks)',hdg:'~2,800 EM stocks',ccy:'USD (NYSE Arca)',
+  note:'Emerging markets in USD. Very similar to XEC (CAD-listed). No RRSP treaty benefit. Requires USD account.',
+  taxnote:'No treaty benefit. Foreign WHT similar to XEC.'},
+
+// — SHORT-TERM BONDS —————————————————————————————————————————
+{t:'VSB',cat:'fi',grp:'st_bond',mer:.0011,us:0,ca:1,il:0,em:0,dy:.023,usl:false,bp:0,sw:false,
+  fn:'Vanguard Canadian Short-Term Bond Index ETF',idx:'Bloomberg Canada Govt/Corp 1-5yr',hdg:'~370 bonds (duration: 2.6yr)',ccy:'CAD (TSX)',
+  note:'Short-term Canadian bonds (1-5 yr). Mix of government and investment-grade corporate. Low interest rate risk (duration 2.6yr). Suitable for 1-3yr goals. Low volatility vs equities.',
+  taxnote:'Interest income taxed at full marginal rate in Non-Reg. Fully sheltered in RRSP/TFSA. Prefer HSAV or ZDB in Non-Reg instead.'},
+
+{t:'XSB',cat:'fi',grp:'st_bond',mer:.0010,us:0,ca:1,il:0,em:0,dy:.025,usl:false,bp:0,sw:false,
+  fn:'iShares Core Canadian Short Term Bond Index ETF',idx:'FTSE Canada Short Term Bond (1-5yr)',hdg:'~380 bonds (duration: 2.75yr)',ccy:'CAD (TSX)',
+  note:'Similar to VSB. iShares version. Slightly higher yield, slightly lower MER. Tracks FTSE Canada Short Term Bond Index.',
+  taxnote:'Same as VSB.'},
+
+{t:'ZST',cat:'fi',grp:'st_bond',mer:.0013,us:0,ca:1,il:0,em:0,dy:.030,usl:false,bp:0,sw:false,
+  fn:'BMO Ultra Short-Term Bond ETF',idx:'Bloomberg Canada 0-1yr investment grade',hdg:'~100 bonds (duration: ~0.6yr)',ccy:'CAD (TSX)',
+  note:'Very short duration (<1yr). Almost cash-like, minimal interest rate risk. Slightly higher yield than HISA ETFs. Includes short corporate paper.',
+  taxnote:'Interest income at full marginal rate in Non-Reg.'},
+
+// — BROAD BONDS ————————————————————————————————————————————————
+{t:'ZAG',cat:'fi',grp:'br_bond',mer:.0009,us:0,ca:1,il:0,em:0,dy:.033,usl:false,bp:0,sw:false,
+  fn:'BMO Aggregate Bond Index ETF',idx:'Bloomberg Canada Aggregate (1-25yr)',hdg:'~1,400 bonds (duration: ~7.5yr)',ccy:'CAD (TSX)',
+  note:'Broad Canadian bond market. Long duration (7.5yr) = more interest rate risk. Fell ~12% in 2022 when rates rose. Best for long-term investors or inside registered accounts only.',
+  taxnote:'Interest income at full marginal rate in Non-Reg. Most efficient in RRSP/TFSA.'},
+
+{t:'XBB',cat:'fi',grp:'br_bond',mer:.0010,us:0,ca:1,il:0,em:0,dy:.033,usl:false,bp:0,sw:false,
+  fn:'iShares Core Canadian Universe Bond Index ETF',idx:'FTSE Canada Universe Bond (all maturities)',hdg:'~1,500 bonds (duration: ~7.5yr)',ccy:'CAD (TSX)',
+  note:'iShares equivalent of ZAG. Very similar performance. Tracks FTSE Canada Universe Bond Index. Full maturity spectrum.',
+  taxnote:'Same as ZAG.'},
+
+{t:'ZDB',cat:'fi',grp:'br_bond',mer:.0009,us:0,ca:1,il:0,em:0,dy:.030,usl:false,bp:0,sw:false,
+  fn:'BMO Discount Bond Index ETF',idx:'Discount-bond subset of Bloomberg Canada Aggregate',hdg:'Discount bonds only',ccy:'CAD (TSX)',
+  note:'Holds bonds trading below par (discount bonds). Returns come more from capital appreciation than coupon income — more tax-efficient in Non-Reg accounts. Specifically designed for taxable investors.',
+  taxnote:'NON-REG: More capital-gains-like returns. Effective tax rate lower than regular bond ETFs (50% inclusion on CG). Best bond choice for taxable accounts.'},
+
+// — HISA ETFs ——————————————————————————————————————————————————
+{t:'CASH',cat:'fi',grp:'hisa',mer:.0011,us:0,ca:1,il:0,em:0,dy:.027,usl:false,bp:0,sw:false,
+  fn:'CI High Interest Savings ETF (CASH.TO)',idx:'HISA deposits at CDIC-member banks',hdg:'HISA deposits (multiple banks)',ccy:'CAD (TSX)',
+  note:'Highest-liquidity HISA ETF. Deposits spread across multiple CDIC-member banks. Very liquid, near-NAV pricing. Best for parking cash temporarily. Yield tracks Bank of Canada overnight rate.',
+  taxnote:'Interest income — fully taxable at marginal rate in Non-Reg. Best inside TFSA (tax-free) or RRSP (deferred).'},
+
+{t:'PSA',cat:'fi',grp:'hisa',mer:.0017,us:0,ca:1,il:0,em:0,dy:.026,usl:false,bp:0,sw:false,
+  fn:'Purpose High Interest Savings ETF',idx:'HISA deposits at CDIC-member banks',hdg:'HISA deposits',ccy:'CAD (TSX)',
+  note:'Purpose Investments\' HISA ETF. Well-established (launched 2013). Slightly lower yield than CASH.TO, slightly higher MER. Comparable safety profile.',
+  taxnote:'Same as CASH.TO.'},
+
+{t:'HSAV',cat:'fi',grp:'hisa',mer:.0018,us:0,ca:1,il:0,em:0,dy:.030,usl:false,bp:0,sw:true,
+  fn:'Horizons High Interest Savings ETF (swap-based)',idx:'HISA via total return swap',hdg:'Swap contract (counterparty)',ccy:'CAD (TSX)',
+  note:'Uses a total return swap to convert HISA interest into capital gains. The most tax-efficient cash equivalent for Non-Registered accounts. Returns appear as NAV appreciation, not interest distributions.',
+  taxnote:'NON-REG OPTIMAL: Only 50% of gains taxable (capital gains treatment). Effective tax rate ~half of CASH.TO/PSA. REGISTERED: No advantage over CASH.TO.'},
+
+// — MONEY MARKET / T-BILLS ————————————————————————————————————
+{t:'ZMMK',cat:'fi',grp:'mm',mer:.0013,us:0,ca:1,il:0,em:0,dy:.030,usl:false,bp:0,sw:false,
+  fn:'BMO Money Market Fund ETF Series',idx:'Canadian money market instruments',hdg:'T-bills, commercial paper, bank paper',ccy:'CAD (TSX)',
+  note:'Money market ETF. Holds very short-term instruments. Stable NAV (~$50). Minimal credit risk. Good for pure capital preservation with very low volatility.',
+  taxnote:'Interest income at marginal rate in Non-Reg.'},
+
+{t:'CBIL',cat:'fi',grp:'mm',mer:.0015,us:0,ca:1,il:0,em:0,dy:.028,usl:false,bp:0,sw:false,
+  fn:'CI 1-3 Month Government of Canada T-Bill ETF',idx:'Government of Canada T-Bills (1-3 month)',hdg:'GoC T-Bills only',ccy:'CAD (TSX)',
+  note:'Pure Government of Canada T-Bills — the safest non-insured cash equivalent. Near-zero credit risk. Yield closely tracks Bank of Canada overnight rate.',
+  taxnote:'Interest income at full marginal rate in Non-Reg.'},
+
+// — GIC ————————————————————————————————————————————————————————
+{t:'GIC',cat:'fi',grp:'gic',mer:0,us:0,ca:1,il:0,em:0,dy:.038,usl:false,bp:0,sw:false,
+  fn:'GIC Ladder (1–5 year terms)',idx:'Not an ETF — fixed-term bank deposits',hdg:'Deposits at CDIC-member institutions',ccy:'CAD',
+  note:'A GIC ladder holds 5 GICs of 1, 2, 3, 4 and 5-year terms. As each matures, reinvest at 5yr rate. ~3.8% avg yield (current estimate). CDIC-insured up to $100K per depositor per category. Illiquid until maturity.',
+  taxnote:'Interest income taxed at full marginal rate annually in Non-Reg (even if not withdrawn). Best in RRSP/TFSA where it compounds tax-free.'},
+];
+
+// ============================================================
+// ACCOUNT METADATA
+// ============================================================
+const ACC_META={
+  rrsp:{nm:'RRSP',note:'Tax-deferred · contributions deductible',pill:'p-b'},
+  tfsa:{nm:'TFSA',note:'Tax-free growth · no deduction',pill:'p-g'},
+  fhsa:{nm:'FHSA',note:'Deductible + tax-free (first home)',pill:'p-b'},
+  taxable:{nm:'Non-Reg',note:'Taxable account',pill:'p-a'},
+  resp:{nm:'RESP',note:'Education savings · 20% CESG',pill:'p-p'},
+  rdsp:{nm:'RDSP',note:'Disability savings plan',pill:'p-d'},
+};
+const ACC_COLORS={rrsp:'#3266ad',tfsa:'#2d9e75',fhsa:'#5a7ab7',taxable:'#cc8800',resp:'#7b68b5',rdsp:'#888'};
+const ACC_ORDER=['rrsp','tfsa','fhsa','taxable','resp','rdsp'];
+
+// ============================================================
+// OPTGROUP LABELS
+// ============================================================
+const GRPS=[
+  {k:'ae_ca',l:'All-Equity — Canadian-listed (CAD)'},
+  {k:'bal_ca',l:'Balanced — Canadian-listed (CAD)'},
+  {k:'ca_eq',l:'Canadian Equity (CAD)'},
+  {k:'glb_ca',l:'Global ex-Canada — Canadian-listed (CAD)'},
+  {k:'intl_ca',l:'International & Emerging Markets (CAD)'},
+  {k:'us_ca',l:'US Equity — Canadian-listed (CAD) ⚠ WHT in RRSP'},
+  {k:'swap',l:'Swap / Tax-Efficient Equity (CAD) — best in Non-Reg'},
+  {k:'us_usd',l:'US-listed Equity (USD) ★ RRSP treaty-exempt'},
+  {k:'st_bond',l:'Short-Term Bond ETFs (CAD)'},
+  {k:'br_bond',l:'Broad / Discount Bond ETFs (CAD)'},
+  {k:'hisa',l:'HISA ETFs (CAD)'},
+  {k:'mm',l:'Money Market / T-Bills (CAD)'},
+  {k:'gic',l:'GIC Ladder (term deposits)'},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let uid=0;
+const id=()=>'s'+(++uid);
+
+const STATE={
+  province:'BC',income:90000,horizon:20,eqR:7.0,fiR:3.5,fxC:0.10,
+  accounts:{
+    rrsp:{enabled:true,total:150000,slots:[{id:id(),t:'VTI',a:120000},{id:id(),t:'VSB',a:30000}]},
+    tfsa:{enabled:true,total:90000,slots:[{id:id(),t:'VCN',a:90000}]},
+    fhsa:{enabled:false,total:0,slots:[]},
+    taxable:{enabled:true,total:60000,slots:[{id:id(),t:'XEF',a:45000},{id:id(),t:'HSAV',a:15000}]},
+    resp:{enabled:false,total:0,slots:[]},
+    rdsp:{enabled:false,total:0,slots:[]},
+  }
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+const fc=v=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1000?'$'+Math.round(a).toLocaleString():'$'+a.toFixed(0));};
+const fp=v=>(v*100).toFixed(2)+'%';
+const fE=t=>ETFS.find(e=>e.t===t)||ETFS[0];
+const getMR=(inc,prov)=>{const b=PR[prov]||PR.BC;for(const[l,r]of b)if(inc<=l)return r;return b[b.length-1][1];};
+const unalloc=acc=>{const used=acc.slots.reduce((s,sl)=>s+(sl.a||0),0);return acc.total-used;};
+
+// Build select HTML (with optgroups)
+function buildSelectHTML(selected){
+  const og=GRPS.map(g=>{
+    const opts=ETFS.filter(e=>e.grp===g.k).map(e=>`<option value="${e.t}"${e.t===selected?' selected':''}>${e.t} — ${e.fn.length>38?e.fn.slice(0,36)+'…':e.fn}</option>`).join('');
+    return opts?`<optgroup label="${g.l}">${opts}</optgroup>`:'';
+  }).join('');
+  return `<option value="—"${selected==='—'?' selected':''}>— None —</option>${og}`;
+}
+
+// ============================================================
+// RENDER ACCOUNTS
+// ============================================================
+function renderAccounts(){
+  const c=document.getElementById('acc-container');
+  c.innerHTML=ACC_ORDER.map(aid=>{
+    const acc=STATE.accounts[aid];
+    const meta=ACC_META[aid];
+    return`<div class="acc-block" id="ab-${aid}">
+<div class="acc-head">
+  <input type="checkbox" id="ck-${aid}" ${acc.enabled?'checked':''} onchange="toggleAcc('${aid}',this.checked)">
+  <div class="acc-info">
+    <div class="acc-nm"><span class="pill ${meta.pill}">${meta.nm}</span></div>
+    <div class="acc-note">${meta.note}</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+    <span style="font-size:10px;color:var(--t2)">Total:</span>
+    <input class="tot-inline" type="number" id="tot-${aid}" value="${acc.total}" min="0" step="5000" oninput="updAccTotal('${aid}',this.value)">
+  </div>
+</div>
+<div class="acc-body" id="body-${aid}" style="${acc.enabled?'':'opacity:.45;pointer-events:none'}">
+  <div id="slots-${aid}">${renderSlots(aid)}</div>
+  <button class="add-btn" onclick="addSlot('${aid}')">+ Add holding</button>
+  <div class="acc-footer">
+    <span style="font-size:10px;color:var(--t2)">Slots: ${acc.slots.length}</span>
+    <span id="ua-${aid}" class="ua-chip"></span>
+  </div>
+</div>
+</div>`;
+  }).join('');
+}
+
+function renderSlots(aid){
+  const acc=STATE.accounts[aid];
+  if(!acc.slots.length)return`<div style="font-size:11px;color:var(--t3);padding:6px 0">No holdings yet — click "Add holding" below.</div>`;
+  return`<div class="slots-hdr"><span>ETF / Instrument</span><span style="text-align:right">Amount ($)</span><span></span></div>`+
+  acc.slots.map(sl=>`<div class="slot-row" id="row-${sl.id}">
+<div class="sel-wrap">
+  <select onchange="updSlotTicker('${aid}','${sl.id}',this.value)">${buildSelectHTML(sl.t)}</select>
+  <button class="ibtn" onmouseenter="showTip(event,'${sl.t}')" onmouseleave="hideTip()" title="ETF info">ⓘ</button>
+</div>
+<input type="number" value="${sl.a}" min="0" step="5000" oninput="updSlotAmt('${aid}','${sl.id}',this.value)" style="text-align:right;font-family:var(--mono);font-size:12px">
+<button class="delbtn" onclick="delSlot('${aid}','${sl.id}')" title="Remove">✕</button>
+</div>`).join('');
+}
+
+// ============================================================
+// STATE MUTATIONS
+// ============================================================
+function toggleAcc(aid,v){
+  STATE.accounts[aid].enabled=v;
+  const body=document.getElementById('body-'+aid);
+  if(body)body.style.cssText=v?'':'opacity:.45;pointer-events:none';
+  recalc();
+}
+function updAccTotal(aid,v){
+  STATE.accounts[aid].total=parseFloat(v)||0;
+  recalc();
+}
+function addSlot(aid){
+  const ua=Math.max(0,unalloc(STATE.accounts[aid]));
+  STATE.accounts[aid].slots.push({id:id(),t:'—',a:ua});
+  document.getElementById('slots-'+aid).innerHTML=renderSlots(aid);
+  recalc();
+}
+function delSlot(aid,sid){
+  STATE.accounts[aid].slots=STATE.accounts[aid].slots.filter(s=>s.id!==sid);
+  document.getElementById('slots-'+aid).innerHTML=renderSlots(aid);
+  recalc();
+}
+function updSlotTicker(aid,sid,v){
+  const sl=STATE.accounts[aid].slots.find(s=>s.id===sid);
+  if(sl){sl.t=v;hideTip();}
+  recalc();
+}
+function updSlotAmt(aid,sid,v){
+  const sl=STATE.accounts[aid].slots.find(s=>s.id===sid);
+  if(sl)sl.a=parseFloat(v)||0;
+  recalc();
+}
+
+// ============================================================
+// TOOLTIP
+// ============================================================
+function showTip(ev,ticker){
+  const etf=fE(ticker);
+  const tip=document.getElementById('tip');
+  if(!etf||etf.cat==='none'){tip.style.display='none';return;}
+  const geo={US:etf.us,CA:etf.ca,Intl:etf.il,EM:etf.em};
+  const colors={US:'#3266ad',CA:'#0D8A5E',Intl:'#7b68b5',EM:'#cc8800'};
+  const geoBars=Object.entries(geo).filter(([,v])=>v>0).map(([k,v])=>`<div class="geo-seg" style="width:${(v*100).toFixed(0)}%;background:${colors[k]}" title="${k}: ${(v*100).toFixed(0)}%"></div>`).join('');
+  const geoLbls=Object.entries(geo).filter(([,v])=>v>0).map(([k,v])=>`<span style="display:flex;align-items:center;gap:3px"><span style="width:6px;height:6px;border-radius:50%;background:${colors[k]};display:inline-block"></span>${k} ${(v*100).toFixed(0)}%</span>`).join('');
+  tip.innerHTML=`
+<div class="tn">${etf.t}</div>
+<div class="tf">${etf.fn}</div>
+${geoBars?`<div class="geo">${geoBars}</div><div style="display:flex;flex-wrap:wrap;gap:5px;font-size:10px;color:var(--t2);margin-bottom:6px">${geoLbls}</div>`:''}
+<div class="tr"><span class="tk">MER (fees/yr)</span><span class="tv">${etf.mer>0?fp(etf.mer):'0%'}</span></div>
+<div class="tr"><span class="tk">Index / type</span><span class="tv" style="font-family:var(--font);font-size:10px;text-align:right">${etf.idx}</span></div>
+<div class="tr"><span class="tk">Holdings</span><span class="tv" style="font-family:var(--font);font-size:10px">${etf.hdg}</span></div>
+<div class="tr"><span class="tk">Currency</span><span class="tv">${etf.ccy}</span></div>
+${etf.dy>0?`<div class="tr"><span class="tk">Est. yield</span><span class="tv">~${fp(etf.dy)}</span></div>`:''}
+${etf.bp>0?`<div class="tr"><span class="tk">Bond portion</span><span class="tv">${(etf.bp*100).toFixed(0)}% internal</span></div>`:''}
+${etf.sw?`<div class="tr"><span class="tk">Structure</span><span class="tv">Swap (no dist.)</span></div>`:''}
+${etf.usl?`<div class="tr"><span class="tk">RRSP treaty</span><span class="tv" style="color:var(--green)">0% WHT ✓</span></div>`:''}
+<div class="tnote">${etf.note}</div>
+${etf.taxnote?`<div class="ttax">${etf.taxnote}</div>`:''}`;
+  tip.style.display='block';
+  const r=ev.target.getBoundingClientRect();
+  let left=r.right+8,top=r.top;
+  if(left+295>window.innerWidth)left=r.left-295-8;
+  if(top+tip.offsetHeight>window.innerHeight-10)top=window.innerHeight-tip.offsetHeight-10;
+  tip.style.left=Math.max(8,left)+'px';
+  tip.style.top=Math.max(8,top)+'px';
+}
+function hideTip(){document.getElementById('tip').style.display='none';}
+document.addEventListener('click',hideTip);
+
+// ============================================================
+// CALCULATION ENGINE
+// ============================================================
+function calcWHTRate(etf,acc){
+  if(etf.sw||etf.cat==='none'||etf.t==='—')return 0;
+  const ud=etf.us*etf.dy;
+  const id2=(etf.il+etf.em)*etf.dy*.12;
+  if(acc==='rrsp')return etf.usl?id2:ud*.15+id2;
+  if(['tfsa','fhsa','resp','rdsp'].includes(acc))return ud*.15+id2;
+  return id2*.30;
+}
+
+function calcIncTaxRate(etf,acc,mRate){
+  if(acc!=='taxable'||etf.cat==='none'||etf.t==='—')return 0;
+  if(etf.sw)return 0;
+  let d=0;
+  if(etf.cat==='equity'){
+    d+=etf.ca*etf.dy*mRate*.30;
+    d+=(etf.us+etf.il+etf.em)*etf.dy*mRate;
+    d+=.005*.5*mRate;
+  } else {
+    const ny=Math.max(0,etf.dy-etf.mer);
+    d+=etf.sw?ny*.5*mRate:ny*mRate;
+  }
+  return d;
+}
+
+function calcSlot(sl,accId,mRate,eqR,fiR,fxC,hrz){
+  const etf=fE(sl.t);
+  if(!etf||etf.cat==='none'||!sl.a||sl.a<=0)return{...sl,nr:0,gr:0,whtA:0,taxA:0,merA:0,proj:sl.a||0};
+  const isEq=etf.cat==='equity';
+  let gr;
+  if(isEq){const eF=1-(etf.bp||0),bF=(etf.bp||0);gr=eF*(eqR/100)+bF*(fiR/100);}
+  else gr=fiR/100;
+  const mer=etf.mer,wht=calcWHTRate(etf,accId),tax=calcIncTaxRate(etf,accId,mRate);
+  const fx=etf.usl?(fxC/100)/Math.max(hrz,1):0;
+  const nr=gr-mer-wht-tax-fx;
+  return{...sl,etf,nr,gr,whtA:wht*sl.a,taxA:tax*sl.a,merA:mer*sl.a,proj:sl.a*Math.pow(1+nr,hrz)};
+}
+
+let pChart=null;
+function recalc(){
+  const prov=document.getElementById('s-prov').value;
+  const inc=parseFloat(document.getElementById('s-inc').value)||90000;
+  const hrz=+document.getElementById('s-hrz').value||20;
+  const eqR=parseFloat(document.getElementById('s-eqr').value)||7;
+  const fiR=parseFloat(document.getElementById('s-fir').value)||3.5;
+  const fxC=parseFloat(document.getElementById('s-fxc').value)||.10;
+  document.getElementById('v-hrz').textContent=hrz;
+  const mRate=getMR(inc,prov);
+
+  // Calculate per-account
+  const results=[];
+  let grandTotal=0,grandProj=0,grandATV=0,grandWHT=0,grandTax=0;
+
+  ACC_ORDER.forEach(aid=>{
+    const acc=STATE.accounts[aid];
+    const ua=document.getElementById('ua-'+aid);
+    const diff=unalloc(acc);
+    if(ua){
+      if(Math.abs(diff)<1){ua.textContent='✓ balanced';ua.className='ua-chip ok';}
+      else if(diff>0){ua.textContent=fc(diff)+' unallocated';ua.className='ua-chip warn';}
+      else{ua.textContent='over by '+fc(-diff);ua.className='ua-chip err';}
+    }
+    if(!acc.enabled||acc.total<=0)return;
+    grandTotal+=acc.total;
+    const calcSlots=acc.slots.map(sl=>calcSlot(sl,aid,mRate,eqR,fiR,fxC,hrz));
+    const accWHT=calcSlots.reduce((s,sl)=>s+sl.whtA,0);
+    const accTax=calcSlots.reduce((s,sl)=>s+sl.taxA,0);
+    const accMER=calcSlots.reduce((s,sl)=>s+sl.merA,0);
+    const accProj=calcSlots.reduce((s,sl)=>s+sl.proj,0);
+    const blendNR=acc.total>0?calcSlots.reduce((s,sl)=>s+sl.nr*(sl.a||0),0)/acc.total:0;
+    const atv=aid==='rrsp'?accProj*(1-mRate*.85):accProj;
+    grandProj+=accProj;grandATV+=atv;grandWHT+=accWHT;grandTax+=accTax;
+    results.push({aid,acc,meta:ACC_META[aid],calcSlots,accWHT,accTax,accMER,accProj,atv,blendNR,mRate});
+  });
+
+  const blndAll=grandTotal>0?results.reduce((s,r)=>s+r.blendNR*r.acc.total,0)/grandTotal:0;
+
+  // Grand total display
+  document.getElementById('grand').textContent='Total invested: '+fc(grandTotal);
+
+  // Metric cards
+  document.getElementById('m-cards').innerHTML=`
+<div class="mcard"><div class="ml">Marginal tax rate</div><div class="mv">${(mRate*100).toFixed(0)}%</div><div class="ms">${prov} · ${fc(inc)}/yr</div></div>
+<div class="mcard"><div class="ml">Blended net return</div><div class="mv" style="color:var(--green)">${(blndAll*100).toFixed(2)}%</div><div class="ms">After MER, WHT, income tax</div></div>
+<div class="mcard"><div class="ml">Annual tax drag</div><div class="mv" style="color:var(--amber)">${fc(grandWHT+grandTax)}</div><div class="ms">WHT ${fc(grandWHT)} · inc.tax ${fc(grandTax)}</div></div>
+<div class="mcard"><div class="ml">Est. after-tax (${hrz}yr)</div><div class="mv" style="color:var(--blue)">${fc(grandATV)}</div><div class="ms">RRSP withdrawal @ ${(mRate*.85*100).toFixed(0)}% est.</div></div>`;
+
+  // Chart
+  const lbls=Array.from({length:hrz+1},(_,i)=>i===0?'Now':i===hrz||i%5===0?'Y'+i:'');
+  const ds=[];
+  if(grandTotal>0)ds.push({label:'Invested',data:Array(hrz+1).fill(Math.round(grandTotal)),borderColor:'#bbb',borderDash:[3,3],borderWidth:1,fill:false,pointRadius:0,tension:0});
+  results.forEach(r=>{
+    const pts=[];
+    for(let y=0;y<=hrz;y++)pts.push(Math.round(r.acc.total*Math.pow(1+r.blendNR,y)));
+    ds.push({label:r.meta.nm,data:pts,backgroundColor:ACC_COLORS[r.aid]+'40',borderColor:ACC_COLORS[r.aid],borderWidth:1.5,fill:true,tension:.3,pointRadius:0});
+  });
+  if(pChart){pChart.destroy();pChart=null;}
+  if(ds.length>0){
+    pChart=new Chart(document.getElementById('chart-canvas'),{type:'line',data:{labels:lbls,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fc(c.parsed.y)}`}}},scales:{y:{ticks:{callback:v=>fc(v),font:{size:10}},grid:{color:'rgba(128,128,128,.07)'}},x:{ticks:{autoSkip:false,maxRotation:0,font:{size:10}},grid:{display:false}}}}});
+  }
+  document.getElementById('lgnd').innerHTML=results.map(r=>`<span><span class="ldot" style="background:${ACC_COLORS[r.aid]}"></span>${r.meta.nm} → ${fc(r.accProj)}</span>`).join('');
+
+  // Alerts
+  const al=[];
+  results.forEach(({aid,acc,calcSlots,mRate:mr})=>{
+    calcSlots.forEach(sl=>{
+      if(!sl.etf||!sl.a)return;
+      const e=sl.etf,a=sl.a;
+      if(aid==='rrsp'&&!e.usl&&e.us>.3&&e.t!=='—'){
+        const saved=e.us*e.dy*a*.15;
+        al.push({tp:'w',msg:`<strong>RRSP — ${e.t}:</strong> ${(e.us*100).toFixed(0)}% US exposure → 15% WHT (~${fc(sl.whtA)}/yr). Canadian-domiciled ETFs are NOT treaty-exempt in RRSP. Switching to VTI or VOO (US-listed) saves ~${fc(saved)}/yr. FX cost: ~${fc((fxC/100)*a)} one-time.`});
+      }
+      if(aid==='rrsp'&&e.usl&&e.t!=='—'){
+        const saved=e.us*e.dy*a*.15;
+        al.push({tp:'g',msg:`<strong>RRSP — ${e.t}:</strong> Treaty-exempt → 0% US withholding tax. Saving ~${fc(saved)}/yr vs. equivalent Canadian-listed ETF. Optimal placement. ✓`});
+      }
+      if(['tfsa','fhsa'].includes(aid)&&e.us>.3&&e.t!=='—'){
+        const wl=e.us*e.dy*a*.15;
+        al.push({tp:'w',msg:`<strong>${ACC_META[aid].nm} — ${e.t}:</strong> ${(e.us*100).toFixed(0)}% US exposure → 15% WHT (~${fc(wl)}/yr), permanently non-recoverable in ${ACC_META[aid].nm}. Consider VCN or XIC (100% Canadian equity) to eliminate this drag entirely.`});
+      }
+      if(aid==='taxable'&&e.ca>.5&&e.t!=='—'){
+        al.push({tp:'g',msg:`<strong>Non-Reg — ${e.t}:</strong> Canadian dividends eligible for the dividend tax credit (effective rate ~${(mr*.30*100).toFixed(0)}% vs ${(mr*100).toFixed(0)}% marginal). Tax-efficient asset for taxable accounts. ✓`});
+      }
+      if(aid==='taxable'&&e.cat==='fi'&&!e.sw&&e.t!=='—'){
+        const itx=Math.max(0,e.dy-e.mer)*a*mr;
+        al.push({tp:'w',msg:`<strong>Non-Reg — ${e.t}:</strong> Interest income taxed at ${(mr*100).toFixed(0)}% marginal (~${fc(itx)}/yr). Consider HSAV (capital gains treatment → ~${fc(itx*.5)}/yr saved) or hold bonds in RRSP/TFSA instead.`});
+      }
+      if(aid==='taxable'&&e.t==='HSAV'){
+        const saved=Math.max(0,e.dy-e.mer)*a*mr*.5;
+        al.push({tp:'g',msg:`<strong>Non-Reg — HSAV:</strong> Interest converted to capital gains (50% inclusion). Saves ~${fc(saved)}/yr vs. standard HISA ETF. Most tax-efficient cash-equivalent for Non-Reg. ✓`});
+      }
+      if(aid==='taxable'&&e.sw&&e.t!=='—'&&e.t!=='HSAV'){
+        al.push({tp:'g',msg:`<strong>Non-Reg — ${e.t} (swap):</strong> Dividends converted to deferred capital gains. Zero annual income tax until sale. Very efficient for high-income earners. Counterparty risk: National Bank. ✓`});
+      }
+      if(['taxable','rrsp'].includes(aid)&&e.usl&&a>75000){
+        al.push({tp:'i',msg:`<strong>${ACC_META[aid].nm} — ${e.t}:</strong> US-situs asset. Non-US residents face US estate tax on holdings >USD $60K (~CAD $82K). With ${fc(a)} here, consider consulting a cross-border advisor.`});
+      }
+    });
+    // Intra-account balance check
+    const slots=calcSlots.filter(s=>s.etf&&s.a>0);
+    const hasEq=slots.some(s=>s.etf.cat==='equity');
+    const hasFI=slots.some(s=>s.etf.cat==='fi');
+    const balanced=slots.some(s=>(s.etf.bp||0)>.0);
+    if(balanced&&hasFI){
+      al.push({tp:'i',msg:`<strong>${ACC_META[aid].nm}:</strong> A balanced ETF (with internal bond allocation) is combined with a separate bond ETF. Your total fixed income exposure may exceed your intended allocation.`});
+    }
+  });
+  if(!al.length&&results.length){al.push({tp:'i',msg:'No active tradeoff issues detected for your current allocation.'});}
+  document.getElementById('alerts').innerHTML=al.length?al.map(x=>`<div class="alrt a${x.tp}"><span style="font-size:14px;flex-shrink:0;margin-top:0px">${x.tp==='w'?'⚠':x.tp==='g'?'✓':'ℹ'}</span><span>${x.msg}</span></div>`).join(''):'<p style="font-size:11px;color:var(--t2)">Add account amounts to see personalized alerts.</p>';
+
+  // Breakdown table
+  const rows=results.map(r=>{
+    const hold=r.calcSlots.filter(s=>s.etf&&s.a>0).map(s=>`<div>${s.t} ${fc(s.a)}</div>`).join('');
+    return`<tr>
+<td><span class="pill ${r.meta.pill}">${r.meta.nm}</span><div style="font-size:10px;color:var(--t2);margin-top:1px">${fc(r.acc.total)}</div></td>
+<td style="font-size:10px;color:var(--t2)">${hold||'—'}</td>
+<td style="color:var(--amber);font-family:var(--mono)">${fc(r.accWHT)}</td>
+<td style="${r.aid==='taxable'?'color:var(--amber)':''};font-family:var(--mono)">${r.aid==='taxable'?fc(r.accTax):'—'}</td>
+<td style="color:var(--green);font-weight:600;font-family:var(--mono)">${fp(r.blendNR)}</td>
+<td style="font-family:var(--mono);font-weight:500">${fc(r.accProj)}<div style="font-size:10px;color:var(--t2)">${r.aid==='rrsp'?'pre-wthdwl':'after-tax'}</div></td>
+</tr>`;
+  }).join('');
+  const totRow=results.length?`<tr class="tot"><td><span class="pill p-d">Total</span></td><td></td><td style="font-family:var(--mono)">${fc(grandWHT)}</td><td style="font-family:var(--mono)">${fc(grandTax)}</td><td style="color:var(--green);font-family:var(--mono)">${fp(blndAll)}</td><td style="font-family:var(--mono)">${fc(grandProj)}<div style="font-size:10px;color:var(--t2)">after-tax: ${fc(grandATV)}</div></td></tr>`:'';
+  document.getElementById('tb-body').innerHTML=rows+totRow;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderAccounts();
+recalc();
+</script>
+</body>
+</html>
