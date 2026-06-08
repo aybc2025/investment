@@ -106,6 +106,27 @@ input[type=checkbox]{accent-color:var(--blue);width:14px;height:14px;cursor:poin
 /* Total input inline */
 .tot-inline{font-family:var(--mono);font-size:12px;padding:3px 7px;border:.5px solid var(--bord);border-radius:6px;width:120px;text-align:right}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.right{position:static;max-height:none}}
+/* Header buttons */
+.hdr-btns{margin-left:auto;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.hbtn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;border:.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;transition:all .15s;white-space:nowrap}
+.hbtn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.6)}
+.hbtn-pdf{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.5)}
+.hbtn-pdf:hover{background:rgba(255,255,255,.30)}
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;z-index:10000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{padding:10px 16px;border-radius:var(--r-lg);font-size:12px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease;pointer-events:auto}
+.toast-ok{background:var(--green);color:#fff}
+.toast-err{background:var(--red);color:#fff}
+.toast-info{background:var(--blue);color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* Print styles */
+@media print{
+  .hdr-btns,.ibtn,.delbtn,.add-btn{display:none!important}
+  .layout{grid-template-columns:1fr;padding:0}
+  .right{position:static;max-height:none}
+  .card{box-shadow:none;border:.5px solid #ccc;break-inside:avoid}
+  body{background:#fff}
+}
 </style>
 </head>
 <body>
@@ -115,7 +136,15 @@ input[type=checkbox]{accent-color:var(--blue);width:14px;height:14px;cursor:poin
     <h1>Canadian Investment Tax Calculator</h1>
     <div class="hdr-sub">RRSP · TFSA · FHSA · Non-Registered · RESP · RDSP — Multi-holding, real-time after-tax optimization</div>
   </div>
+  <div class="hdr-btns">
+    <input type="file" id="json-file-in" accept=".json" style="display:none" onchange="importJSON(this.files[0])">
+    <button class="hbtn" onclick="document.getElementById('json-file-in').click()">&#128194; Import JSON</button>
+    <button class="hbtn" onclick="exportJSON()">&#8659; Export JSON</button>
+    <button class="hbtn hbtn-pdf" onclick="exportPDF()">&#128196; Export PDF</button>
+  </div>
 </div>
+
+<div id="toast"></div>
 
 <main class="layout">
 <div class="left">
@@ -775,6 +804,243 @@ function recalc(){
   }).join('');
   const totRow=results.length?`<tr class="tot"><td><span class="pill p-d">Total</span></td><td></td><td style="font-family:var(--mono)">${fc(grandWHT)}</td><td style="font-family:var(--mono)">${fc(grandTax)}</td><td style="color:var(--green);font-family:var(--mono)">${fp(blndAll)}</td><td style="font-family:var(--mono)">${fc(grandProj)}<div style="font-size:10px;color:var(--t2)">after-tax: ${fc(grandATV)}</div></td></tr>`:'';
   document.getElementById('tb-body').innerHTML=rows+totRow;
+  // Save for PDF export
+  LAST={prov,inc,hrz,eqR,fiR,fxC,mRate,results,blndAll,grandTotal,grandProj,grandATV,grandWHT,grandTax,al};
+}
+
+// ============================================================
+// IMPORT / EXPORT
+// ============================================================
+let LAST=null;
+
+// ---- Toast ----
+function toast(msg,type='info'){
+  const t=document.getElementById('toast');
+  const el=document.createElement('div');
+  el.className='toast-item toast-'+type;
+  el.textContent=msg;
+  t.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .4s';setTimeout(()=>el.remove(),400);},3000);
+}
+
+// ---- Export JSON ----
+function exportJSON(){
+  const data={
+    version:'1.1',
+    exported:new Date().toISOString(),
+    inputs:{
+      province:document.getElementById('s-prov').value,
+      income:parseFloat(document.getElementById('s-inc').value)||90000,
+      horizon:+document.getElementById('s-hrz').value||20,
+      eqR:parseFloat(document.getElementById('s-eqr').value)||7,
+      fiR:parseFloat(document.getElementById('s-fir').value)||3.5,
+      fxC:parseFloat(document.getElementById('s-fxc').value)||0.10,
+    },
+    accounts:JSON.parse(JSON.stringify(STATE.accounts)),
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='ca_portfolio_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(url);
+  toast('Portfolio exported as JSON ✓','ok');
+}
+
+// ---- Import JSON ----
+function importJSON(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(data.inputs){
+        const s=data.inputs;
+        document.getElementById('s-prov').value=s.province||'BC';
+        document.getElementById('s-inc').value=s.income||90000;
+        document.getElementById('s-hrz').value=s.horizon||20;
+        document.getElementById('v-hrz').textContent=s.horizon||20;
+        document.getElementById('s-eqr').value=s.eqR||7;
+        document.getElementById('s-fir').value=s.fiR||3.5;
+        document.getElementById('s-fxc').value=s.fxC||0.10;
+      }
+      if(data.accounts){
+        // Restore accounts, regenerating IDs to avoid collisions
+        Object.keys(data.accounts).forEach(aid=>{
+          if(STATE.accounts[aid]){
+            const src=data.accounts[aid];
+            STATE.accounts[aid].enabled=src.enabled??true;
+            STATE.accounts[aid].total=src.total||0;
+            STATE.accounts[aid].slots=(src.slots||[]).map(sl=>({id:id(),t:sl.t||'—',a:sl.a||0}));
+          }
+        });
+      }
+      renderAccounts();recalc();
+      toast('Portfolio imported successfully ✓','ok');
+    }catch(err){toast('Import failed: '+err.message,'err');}
+    // Reset input so same file can be re-imported
+    document.getElementById('json-file-in').value='';
+  };
+  reader.readAsText(file);
+}
+
+// ---- Export PDF ----
+function exportPDF(){
+  if(!window.jspdf){toast('PDF library loading — try again in a moment','info');return;}
+  if(!LAST){toast('Calculate your portfolio first','info');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=doc.internal.pageSize.getWidth();
+  const date=new Date().toLocaleDateString('en-CA');
+  let y=15;
+
+  // ---- Header ----
+  doc.setFillColor(27,79,191);doc.rect(0,0,W,22,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('Canadian Investment Tax Calculator',12,10);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('Portfolio Report — Generated '+date+'  |  For personal reference only — not financial advice',12,17);
+  y=30;
+
+  // ---- Portfolio basics ----
+  doc.setTextColor(26,31,46);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text('Portfolio Basics',12,y);y+=5;
+  doc.autoTable({
+    startY:y,
+    head:[['Parameter','Value']],
+    body:[
+      ['Province',LAST.prov],
+      ['Annual Income','$'+LAST.inc.toLocaleString()],
+      ['Combined Marginal Tax Rate',(LAST.mRate*100).toFixed(0)+'%'],
+      ['Investment Horizon',LAST.hrz+' years'],
+      ['Expected Equity Return',LAST.eqR+'%/yr'],
+      ['Expected Bond / FI Return',LAST.fiR+'%/yr'],
+      ['USD Round-trip FX Cost',LAST.fxC+'%'],
+    ],
+    styles:{fontSize:9,cellPadding:3},
+    headStyles:{fillColor:[27,79,191],textColor:[255,255,255],fontStyle:'bold'},
+    columnStyles:{0:{cellWidth:70,fontStyle:'bold'}},
+    margin:{left:12,right:12},theme:'grid',
+  });
+  y=doc.lastAutoTable.finalY+8;
+
+  // ---- Results summary ----
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,31,46);
+  doc.text('Results Summary',12,y);y+=5;
+  doc.autoTable({
+    startY:y,
+    head:[['Metric','Value']],
+    body:[
+      ['Total Invested','$'+Math.round(LAST.grandTotal).toLocaleString()],
+      ['Blended Net Return / yr',(LAST.blndAll*100).toFixed(2)+'%'],
+      ['Annual Withholding Tax Drag','$'+Math.round(LAST.grandWHT).toLocaleString()],
+      ['Annual Income Tax on Distributions','$'+Math.round(LAST.grandTax).toLocaleString()],
+      ['Total Annual Tax Drag','$'+Math.round(LAST.grandWHT+LAST.grandTax).toLocaleString()],
+      ['Projected Gross Value ('+LAST.hrz+'yr)','$'+Math.round(LAST.grandProj).toLocaleString()],
+      ['Est. After-Tax Value ('+LAST.hrz+'yr)','$'+Math.round(LAST.grandATV).toLocaleString()],
+    ],
+    styles:{fontSize:9,cellPadding:3},
+    headStyles:{fillColor:[13,138,94],textColor:[255,255,255],fontStyle:'bold'},
+    columnStyles:{0:{cellWidth:90,fontStyle:'bold'},1:{halign:'right',fontFamily:'courier'}},
+    margin:{left:12,right:12},theme:'grid',
+  });
+  y=doc.lastAutoTable.finalY+8;
+
+  // ---- Holdings ----
+  // New page if not enough space
+  if(y>230)doc.addPage(),y=15;
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,31,46);
+  doc.text('Account Holdings',12,y);y+=5;
+
+  const holdRows=[];
+  LAST.results.forEach(r=>{
+    r.calcSlots.filter(s=>s.etf&&s.a>0).forEach(sl=>{
+      const whtDrag=(sl.whtA||0);
+      const taxDrag=(sl.taxA||0);
+      const isEq=sl.etf.cat==='equity';
+      holdRows.push([
+        r.meta.nm,
+        sl.t,
+        sl.etf.fn.length>35?sl.etf.fn.slice(0,33)+'…':sl.etf.fn,
+        '$'+Math.round(sl.a).toLocaleString(),
+        (sl.etf.mer*100).toFixed(2)+'%',
+        sl.etf.usl?'0% (treaty)':r.aid==='taxable'?'FTC':'15%',
+        (sl.nr*100).toFixed(2)+'%',
+        '$'+Math.round(sl.proj||sl.a).toLocaleString(),
+      ]);
+    });
+    // Subtotal row per account
+    if(r.calcSlots.filter(s=>s.a>0).length>1){
+      holdRows.push([
+        {content:r.meta.nm+' TOTAL',styles:{fontStyle:'bold',fillColor:[235,240,251]}},
+        {content:'',styles:{fillColor:[235,240,251]}},
+        {content:r.acc.slots.length+' holding(s)',styles:{fillColor:[235,240,251]}},
+        {content:'$'+Math.round(r.acc.total).toLocaleString(),styles:{fontStyle:'bold',fillColor:[235,240,251],halign:'right'}},
+        {content:'',styles:{fillColor:[235,240,251]}},
+        {content:'',styles:{fillColor:[235,240,251]}},
+        {content:(r.blendNR*100).toFixed(2)+'%',styles:{fontStyle:'bold',fillColor:[235,240,251],halign:'right'}},
+        {content:'$'+Math.round(r.accProj).toLocaleString(),styles:{fontStyle:'bold',fillColor:[235,240,251],halign:'right'}},
+      ]);
+    }
+  });
+
+  doc.autoTable({
+    startY:y,
+    head:[['Account','Ticker','Fund Name','Amount','MER','WHT','Net Ret.','Projected']],
+    body:holdRows,
+    styles:{fontSize:8,cellPadding:2.5},
+    headStyles:{fillColor:[27,79,191],textColor:[255,255,255],fontStyle:'bold',fontSize:8},
+    columnStyles:{
+      0:{cellWidth:18},1:{cellWidth:14},2:{cellWidth:52},
+      3:{cellWidth:22,halign:'right'},4:{cellWidth:12,halign:'right'},
+      5:{cellWidth:18,halign:'center'},6:{cellWidth:16,halign:'right'},7:{cellWidth:24,halign:'right'},
+    },
+    margin:{left:12,right:12},theme:'grid',
+  });
+  y=doc.lastAutoTable.finalY+8;
+
+  // ---- Alerts ----
+  if(LAST.al&&LAST.al.length){
+    if(y>240)doc.addPage(),y=15;
+    doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,31,46);
+    doc.text('Tax & Tradeoff Alerts',12,y);y+=5;
+
+    const alertRows=LAST.al.map(a=>{
+      const icon=a.tp==='w'?'⚠ Warning':a.tp==='g'?'✓ Optimal':'ℹ Info';
+      // Strip HTML tags from message
+      const clean=a.msg.replace(/<[^>]+>/g,'');
+      return[icon,clean];
+    });
+    doc.autoTable({
+      startY:y,
+      head:[['Type','Alert']],
+      body:alertRows,
+      styles:{fontSize:8,cellPadding:3},
+      headStyles:{fillColor:[107,72,176],textColor:[255,255,255],fontStyle:'bold'},
+      columnStyles:{0:{cellWidth:22,fontStyle:'bold'},1:{cellWidth:166}},
+      margin:{left:12,right:12},theme:'grid',
+      didParseCell:(data)=>{
+        if(data.section==='body'&&data.column.index===0){
+          const v=data.cell.raw;
+          if(v&&v.includes('Warning'))data.cell.styles.textColor=[168,107,0];
+          else if(v&&v.includes('Optimal'))data.cell.styles.textColor=[13,138,94];
+          else data.cell.styles.textColor=[27,79,191];
+        }
+      }
+    });
+    y=doc.lastAutoTable.finalY+5;
+  }
+
+  // ---- Footer on all pages ----
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFontSize(7);doc.setTextColor(150,150,150);doc.setFont('helvetica','normal');
+    doc.text('Canadian Investment Tax Calculator — For personal reference only. Not financial or tax advice. Consult a qualified advisor.',12,doc.internal.pageSize.getHeight()-8);
+    doc.text('Page '+i+' of '+pageCount,W-12,doc.internal.pageSize.getHeight()-8,{align:'right'});
+  }
+
+  doc.save('ca_portfolio_'+date+'.pdf');
+  toast('PDF report saved ✓','ok');
 }
 
 // ============================================================
@@ -783,5 +1049,7 @@ function recalc(){
 renderAccounts();
 recalc();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
